@@ -1,6 +1,7 @@
 ﻿using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using static Photon.Pun.PhotonNetwork;
 
 public class GameLauncher : MonoBehaviourPunCallbacks
@@ -17,6 +18,8 @@ public class GameLauncher : MonoBehaviourPunCallbacks
     private static string gameVersion = "1";
 
     private static GameLauncher instance;
+
+    private bool isConnecting;
     
     private void Start()
     {
@@ -39,7 +42,7 @@ public class GameLauncher : MonoBehaviourPunCallbacks
             JoinRandomRoom();
         else
         {
-            ConnectUsingSettings();
+            isConnecting = ConnectUsingSettings();
             GameVersion = gameVersion;
         }
     }
@@ -50,14 +53,18 @@ public class GameLauncher : MonoBehaviourPunCallbacks
     {
         Log("OnConnectedToMaster was called");
 
-        JoinRandomRoom();
+        if(isConnecting)
+        {
+            JoinRandomRoom();
+            isConnecting = false;
+        }
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
         progressLabel.SetActive(false);
         controlPanel.SetActive(true);
-        
+        isConnecting = false;
         Log($"OnDisconnected was called. reason: {cause}");
     }
 
@@ -66,7 +73,13 @@ public class GameLauncher : MonoBehaviourPunCallbacks
         CreateRoom(null, new RoomOptions{MaxPlayers = maxPlayersPerRoom});
     }
 
-    public override void OnJoinedRoom() => Log("OnJoinedRoom was called");
+    public override void OnJoinedRoom()
+    {
+        Log("OnJoinedRoom was called");
+        
+        if(CurrentRoom.PlayerCount > 0)
+            LoadLevel("TestScene");
+    }
 
     private void Log(string message) => Debug.Log(message);
 }
