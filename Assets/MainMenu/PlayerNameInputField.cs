@@ -9,7 +9,7 @@ public class PlayerNameInputField : MonoBehaviour
 	
 	private const string playerNamePrefKey = "PlayerName";
 
-	private void Awake() => inputField.onSubmit.AddListener(SetPlayerName);
+	private void Awake() => inputField.onEndEdit.AddListener(SetPlayerName);
 	
 	private void Start()
 	{
