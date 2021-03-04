@@ -1,5 +1,6 @@
 ﻿using Photon.Pun;
 using Photon.Realtime;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static Photon.Pun.PhotonNetwork;
@@ -37,7 +38,7 @@ public class GameLauncher : MonoBehaviourPunCallbacks
     {
         progressLabel.SetActive(true);
         controlPanel.SetActive(false);
-        
+        progressLabel.GetComponent<TMP_Text>().text = "Connecting";
         if(IsConnected)
             JoinRandomRoom();
         else
