@@ -9,8 +9,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using WebSocketSharp;
+using static NetworkEvent;
 
-public class TextChat : MonoBehaviourPunCallbacks, IOnEventCallback
+public class TextChat : MonoBehaviourPunCallbacks
 {
 	private const byte SendMessageEventCode = 1;
 	
@@ -32,7 +33,10 @@ public class TextChat : MonoBehaviourPunCallbacks, IOnEventCallback
 	{
 		SendLogNoNotify($"{PhotonNetwork.NickName} has entered the room");
 		messageInput.onSubmit.AddListener(SendInputAsMessage);
+		NetworkEvent.RegisterEvent(NetworkEvent.EventCode.ChatMessage, ReceiveMessage);
 	}
+
+	private void OnDestroy() => NetworkEvent.UnregisterEvent(NetworkEvent.EventCode.ChatMessage, ReceiveMessage);
 
 	private void Update()
 	{
@@ -82,8 +86,6 @@ public class TextChat : MonoBehaviourPunCallbacks, IOnEventCallback
 
 		var text = instance.GetComponent<TMP_Text>();
 
-		
-		
 		if(log)
 		{
 			text.color = Color.red;
@@ -115,27 +117,16 @@ public class TextChat : MonoBehaviourPunCallbacks, IOnEventCallback
 	private void NotifyMessage(string nickname, string message, bool log)
 	{
 		var content = new object[] { nickname, message, log };
-		var raiseEventOptions = new RaiseEventOptions() { Receivers = ReceiverGroup.All };
-		PhotonNetwork.RaiseEvent(SendMessageEventCode, content, raiseEventOptions, SendOptions.SendReliable);
+		
+		RaiseEvent(NetworkEvent.EventCode.ChatMessage, content);
 	}
 
-	public void OnEvent(EventData photonEvent)
+	public void ReceiveMessage(object[] data)
 	{
-		var eventCode = photonEvent.Code;
-
-		if(eventCode == SendMessageEventCode)
-		{
-			var data = (object[])photonEvent.CustomData;
-
-			var sender = (string)data[0];
-			var message = (string)data[1];
-			var log = (bool)data[2];
+		var sender = (string)data[0];
+		var message = (string)data[1];
+		var log = (bool)data[2];
 			
-			SendMessageNoNotify(sender, message,log);
-		}
+		SendMessageNoNotify(sender, message, log);
 	}
-
-	public override void OnEnable() => PhotonNetwork.AddCallbackTarget(this);
-
-	public override void OnDisable() => PhotonNetwork.RemoveCallbackTarget(this);
 }

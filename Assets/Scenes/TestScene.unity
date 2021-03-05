@@ -146,6 +146,7 @@ GameObject:
   - component: {fileID: 689726569}
   - component: {fileID: 689726568}
   - component: {fileID: 689726571}
+  - component: {fileID: 689726572}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -214,6 +215,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   quitButton: {fileID: 93204318}
+--- !u!114 &689726572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 689726567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81e04bb06983d5f4a93d93e446f51882, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &887416585
 GameObject:
   m_ObjectHideFlags: 0
