@@ -7,12 +7,14 @@ using UnityEngine;
 
 public class NetworkEvent : MonoBehaviourPunCallbacks, IOnEventCallback
 {
-    public enum EventCode {__RESERVED__, Movement, ChatMessage}
+    public enum EventCode {__RESERVED__, Movement, ChatMessage, RequestMovementSync}
 
     private static Dictionary<EventCode, Action<object[]>> RegisteredEvents = new Dictionary<EventCode, Action<object[]>>();
 
     private static NetworkEvent instance;
 
+    private int networkCallCount;
+    
     private void Awake() => instance = this;
 
     public override void OnEnable()
@@ -59,6 +61,9 @@ public class NetworkEvent : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public void OnEvent(EventData eventData)
     {
+        networkCallCount++;
+        Debug.Log("Total Network Calls: " + networkCallCount);
+        
         var eventCode = (EventCode)eventData.Code;
         if(!RegisteredEvents.ContainsKey(eventCode)) return;
 

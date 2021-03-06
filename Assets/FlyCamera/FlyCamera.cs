@@ -1,23 +1,14 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using ExitGames.Client.Photon;
 using Photon.Pun;
-using Photon.Realtime;
 using UnityEngine;
 
-public class FlyCamera : MonoBehaviourPunCallbacks, IOnEventCallback
+public class FlyCamera : MonoBehaviourPunCallbacks
 {
-    private const byte MoveEventCode = 0;
-
-    private Dictionary<int, GameObject> networkPlayers = new Dictionary<int, GameObject>();
-
-    [SerializeField]
-    private GameObject networkPlayerPrefab;
-    
     public enum MouseButton { Left = 0, Right = 1, Middle = 2 }
 
-    [Header("Dependencies")]
-    [Tooltip("Camera to control")]
+    [Header("Dependencies"),Tooltip("Camera to control")]
     public new Camera camera = null;
 
     [Header("Settings")]
@@ -45,12 +36,11 @@ public class FlyCamera : MonoBehaviourPunCallbacks, IOnEventCallback
     [Space]
     public bool invertXAxis = false;
     public bool invertYAxis = false;
-    [Space]
-    [Tooltip("Max up/down angle in degrees")]
+    
+    [Space,Tooltip("Max up/down angle in degrees")]
     public float maxYAngle = 60.0f;
 
-    [Space]
-    [Tooltip("Time scaled camera movement speed")]
+    [Space,Tooltip("Time scaled camera movement speed")]
     public float moveSpeed = 20.0f;
 
     [Tooltip("Movement speed is multiplied by this when the boost button is held")]
@@ -72,44 +62,41 @@ public class FlyCamera : MonoBehaviourPunCallbacks, IOnEventCallback
         if (lookTarget == null)
             lookTarget = new GameObject("CameraTarget").transform;
         lookTarget.position = camera.transform.position + camera.transform.forward;
-
-        foreach(var player in PhotonNetwork.CurrentRoom.Players)
-        {
-            if(player.Value.ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber) continue;
-            
-            var playerInstance = Instantiate(networkPlayerPrefab);
-            networkPlayers.Add(player.Key,playerInstance);
-        }
     }
 
     private void Update()
     {
         Look3D();
+
         if(fly)
             Fly3D();
         else
             Walk3D();
+    }
 
-        if(camera.transform.position != positionLastFrame || camera.transform.rotation.eulerAngles.y != yRotationLastFrame)
+    private int networkDelayFrames;
+    private void FixedUpdate()
+    {
+        networkDelayFrames = (networkDelayFrames + 1) % 3;
+
+        if(networkDelayFrames != 0) return;
+        
+        var tr = camera.transform;
+
+        if(camera.transform.position != positionLastFrame || tr.rotation.eulerAngles.y != yRotationLastFrame)
         {
-            var data = new object[] { camera.transform.position, camera.transform.rotation.eulerAngles.y, PhotonNetwork.LocalPlayer.ActorNumber };
-            PhotonNetwork.RaiseEvent(MoveEventCode, data, new RaiseEventOptions{ Receivers = ReceiverGroup.All },SendOptions.SendReliable);
+            var posData = new NetworkPlayerSync.PositionData()
+            {
+                Position = camera.transform.position, 
+                YRotation = tr.rotation.eulerAngles.y, 
+                ID = PhotonNetwork.LocalPlayer.ActorNumber,
+            };
+             
+            NetworkEvent.RaiseEvent(NetworkEvent.EventCode.Movement, posData.ToObjectArray());
         }
 
         positionLastFrame = camera.transform.position;
-        yRotationLastFrame = camera.transform.rotation.eulerAngles.y;
-    }
-
-    public override void OnPlayerEnteredRoom(Player player)
-    {
-        var playerInstance = Instantiate(networkPlayerPrefab);
-        networkPlayers.Add(player.ActorNumber,playerInstance);
-    }
-
-    public override void OnPlayerLeftRoom(Player player)
-    {
-        Destroy(networkPlayers[player.ActorNumber]);
-        networkPlayers.Remove(player.ActorNumber);
+        yRotationLastFrame = tr.rotation.eulerAngles.y;
     }
 
     private void Look3D()
@@ -130,9 +117,9 @@ public class FlyCamera : MonoBehaviourPunCallbacks, IOnEventCallback
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        /// Rotates the look target around the camera instead of directly changing the camera's rotation
-        /// Doing it this way allows us to remove the need for a camera parent and also gives us
-        /// control for following other targets if necessary
+        // Rotates the look target around the camera instead of directly changing the camera's rotation
+        // Doing it this way allows us to remove the need for a camera parent and also gives us
+        // control for following other targets if necessary
 
         var mouse = new Vector2(Input.GetAxis("Mouse X") * horizontalSensitivity, -Input.GetAxis("Mouse Y") * verticalSensitivity);
 
@@ -216,26 +203,5 @@ public class FlyCamera : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public void Transition(Transform target, float stepSpeed = 0.1f) => transition = StartCoroutine(SmoothTransition(target, stepSpeed));
     public void Transition(int index, float stepSpeed = 0.1f) => transition = StartCoroutine(SmoothTransition(cameraPositions[index], stepSpeed));
-    public void OnEvent(EventData photonEvent)
-    {
-        if(photonEvent.Code == MoveEventCode)
-        {
-            var data = (object[])photonEvent.CustomData;
-            
-            var id = (int)data[2];
-            if(id == PhotonNetwork.LocalPlayer.ActorNumber) return;
-            
-            var pos = (Vector3)data[0];
-            var rot = (float)data[1];
-
-            if(networkPlayers.ContainsKey(id))
-            {
-                var go = networkPlayers[id];
-
-                //TODO: Remove magic number for player height offset
-                go.transform.position = pos - Vector3.up * 0.9f;
-                go.transform.rotation = Quaternion.Euler(0, rot, 0);
-            }
-        }
-    }
+    
 }
