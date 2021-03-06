@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
-using UnityEngine.UIElements;
 using EventCode = NetworkEvent.EventCode;
 using static NetworkEvent;
 public class NetworkPlayerSync : MonoBehaviourPunCallbacks

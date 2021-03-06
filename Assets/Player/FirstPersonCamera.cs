@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine;
 
-public class FlyCamera : MonoBehaviourPunCallbacks
+public class FirstPersonCamera : MonoBehaviourPunCallbacks
 {
     public enum MouseButton { Left = 0, Right = 1, Middle = 2 }
 
@@ -16,6 +16,15 @@ public class FlyCamera : MonoBehaviourPunCallbacks
     public bool startWithFreeLook = false;
 
     public bool fly;
+    
+    [SerializeField]
+    private float radius;
+
+    [SerializeField]
+    private float height;
+
+    [SerializeField]
+    private int resolution;
 
     [Tooltip("Button to be held down for freelook")]
     public MouseButton lookButton = MouseButton.Right;
@@ -70,9 +79,11 @@ public class FlyCamera : MonoBehaviourPunCallbacks
 
         if(fly)
             Fly3D();
-        else
+        else 
             Walk3D();
     }
+
+
 
     private int networkDelayFrames;
     private void FixedUpdate()
@@ -165,6 +176,8 @@ public class FlyCamera : MonoBehaviourPunCallbacks
         
         var delta = new Vector3(Input.GetAxis("HorizontalLR"), Input.GetAxis("Vertical"), Input.GetAxis("HorizontalFB")) * speed * Time.deltaTime;
 
+        if(Colliding(delta)) return;
+        
         var tr = camera.transform;
         
         //TODO: Base y position on floor + player height
@@ -177,6 +190,24 @@ public class FlyCamera : MonoBehaviourPunCallbacks
         tr.position = pos;
         
         lookTarget.transform.position = pos + tr.forward;
+    }
+    
+    private bool Colliding(Vector3 input)
+    {
+        var pos = transform.position;	
+        var bottom = pos.y - (0.5f * height);
+        var top = pos.y    + (0.5f * height);
+
+        for(var y = bottom; y < top; y += height / resolution)
+        {
+            var start = new Vector3(pos.x, y, pos.z);
+            var end = start + new Vector3(input.x, 0, input.z);
+            var dir = transform.rotation * (end - start);
+            if(Physics.Raycast(start, dir, radius)) return true;
+            Debug.DrawRay(start,dir.normalized);
+        }
+
+        return false;
     }
     
     private IEnumerator SmoothTransition(int index, float stepSpeed = 0.1f)
