@@ -3,6 +3,7 @@ using Photon.Realtime;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using WebSocketSharp;
 using static Photon.Pun.PhotonNetwork;
 
 public class GameLauncher : MonoBehaviourPunCallbacks
@@ -13,6 +14,9 @@ public class GameLauncher : MonoBehaviourPunCallbacks
     [SerializeField]
     private GameObject controlPanel;
 
+    [SerializeField]
+    private TMP_Text roomCode;
+    
     [SerializeField]
     private GameObject progressLabel;
     
@@ -40,7 +44,12 @@ public class GameLauncher : MonoBehaviourPunCallbacks
         controlPanel.SetActive(false);
         progressLabel.GetComponent<TMP_Text>().text = "Connecting";
         if(IsConnected)
-            JoinRandomRoom();
+        {
+            if(roomCode.text.IsNullOrEmpty())
+                JoinRandomRoom();
+            else
+                JoinRoom(roomCode.text);
+        }
         else
         {
             isConnecting = ConnectUsingSettings();
@@ -56,7 +65,11 @@ public class GameLauncher : MonoBehaviourPunCallbacks
 
         if(isConnecting)
         {
-            JoinRandomRoom();
+            if(roomCode.text.IsNullOrEmpty())
+                JoinRandomRoom();
+            else
+                JoinRoom(roomCode.text);
+            
             isConnecting = false;
         }
     }
